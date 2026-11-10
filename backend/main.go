@@ -14,6 +14,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/farrelarvindra/notes-app/handler"
+	"github.com/farrelarvindra/notes-app/store"
 )
 
 type Config struct {
@@ -51,9 +52,25 @@ func loadConfig() Config {
 func main() {
 	cfg := loadConfig()
 
+	// Initialize database connection with GORM
+	db, err := store.NewDB(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("Database connection error: %v\n", err)
+	}
+
+	// Ensure underlying connection is closed on shutdown
+	sqlDB, err := db.DB()
+	if err == nil {
+		defer sqlDB.Close()
+	}
+	log.Println("Connected to PostgreSQL database successfully via GORM.")
+
+	// Initialize handlers with database dependency
+	h := handler.New(db)
+
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.Port),
-		Handler:      handler.Routes(),
+		Handler:      h.Routes(),
 		ReadTimeout:  cfg.ReadTimeout,
 		WriteTimeout: cfg.WriteTimeout,
 		IdleTimeout:  cfg.IdleTimeout,
