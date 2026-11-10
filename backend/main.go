@@ -18,14 +18,15 @@ import (
 
 type Config struct {
 	Port         string
+	DatabaseURL  string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	IdleTimeout  time.Duration
 }
 
 func loadConfig() Config {
-	// Try loading .env from parent directories or current directory
-	_ = godotenv.Load("../../.env")
+	// Try loading .env from parent directory (project root) or current directory
+	_ = godotenv.Load("../.env")
 	_ = godotenv.Load(".env")
 
 	port := os.Getenv("PORT")
@@ -33,8 +34,14 @@ func loadConfig() Config {
 		port = "8080"
 	}
 
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = os.Getenv("DB_URL")
+	}
+
 	return Config{
 		Port:         port,
+		DatabaseURL:  dbURL,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  1 * time.Minute,
